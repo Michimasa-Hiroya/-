@@ -82,11 +82,15 @@ function App() {
       const eventIndex = prevEvents.findIndex(e => e.id === eventData.id);
       if (eventIndex > -1) {
         const updatedEvents = [...prevEvents];
-        // When saving, we keep the original event's deletedOccurrences,
-        // unless we are changing a recurring event to non-recurring, in which case we clear it.
-        const oldEvent = prevEvents[eventIndex];
-        const newDeletedOccurrences = eventData.recurring !== 'none' ? oldEvent.deletedOccurrences : undefined;
-        updatedEvents[eventIndex] = { ...eventData, deletedOccurrences: newDeletedOccurrences };
+        const finalEventData = { ...eventData };
+
+        // If event is changed to non-recurring, remove recurring-specific properties.
+        if (finalEventData.recurring === 'none') {
+          delete finalEventData.deletedOccurrences;
+          delete finalEventData.endDate;
+        }
+        
+        updatedEvents[eventIndex] = finalEventData;
         return updatedEvents;
       } else {
         return [...prevEvents, eventData];
@@ -96,8 +100,34 @@ function App() {
   }, [setEvents, handleCloseModal]);
   
   const handleDeleteEvent = useCallback((eventId: string, deleteType: 'single' | 'all', dateOfOccurrence: Date | null) => {
-    if (deleteType === 'all') {
-        setEvents(prevEvents => prevEvents.filter(e => e.id !== eventId));
+    if (deleteType === 'all' && dateOfOccurrence) {
+      setEvents(prevEvents => {
+        const eventToModify = prevEvents.find(e => e.id === eventId);
+        if (!eventToModify) return prevEvents;
+
+        const occurrenceDateStart = new Date(dateOfOccurrence);
+        occurrenceDateStart.setHours(0, 0, 0, 0);
+
+        const eventStartDate = new Date(eventToModify.startDateTime);
+        eventStartDate.setHours(0, 0, 0, 0);
+
+        // If deleting from on or before the first occurrence, remove the whole series.
+        if (occurrenceDateStart.getTime() <= eventStartDate.getTime()) {
+          return prevEvents.filter(e => e.id !== eventId);
+        }
+
+        // Otherwise, set an end date to stop recurrence.
+        const newEndDate = new Date(dateOfOccurrence);
+        newEndDate.setDate(newEndDate.getDate() - 1);
+        newEndDate.setHours(23, 59, 59, 999);
+
+        return prevEvents.map(e => {
+          if (e.id === eventId) {
+            return { ...e, endDate: newEndDate.getTime() };
+          }
+          return e;
+        });
+      });
     } else if (deleteType === 'single' && dateOfOccurrence) {
         setEvents(prevEvents => {
             return prevEvents.map(e => {
@@ -105,7 +135,6 @@ function App() {
                     const deletedOccurrences = e.deletedOccurrences ? [...e.deletedOccurrences] : [];
                     const occurrenceTimestamp = new Date(dateOfOccurrence);
                     occurrenceTimestamp.setHours(0, 0, 0, 0);
-                    // Avoid duplicates
                     if (!deletedOccurrences.includes(occurrenceTimestamp.getTime())) {
                         deletedOccurrences.push(occurrenceTimestamp.getTime());
                     }
@@ -114,6 +143,8 @@ function App() {
                 return e;
             });
         });
+    } else if (deleteType === 'all') { // Fallback for safety, e.g. if dateOfOccurrence is null
+        setEvents(prevEvents => prevEvents.filter(e => e.id !== eventId));
     }
     handleCloseModal();
   }, [setEvents, handleCloseModal]);

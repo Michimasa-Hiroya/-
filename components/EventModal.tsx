@@ -174,7 +174,7 @@ export const EventModal: React.FC<EventModalProps> = ({ isOpen, onClose, onSave,
                             この日のみ削除
                         </button>
                         <button
-                            onClick={() => onDelete(eventToEdit.id, 'all', null)}
+                            onClick={() => onDelete(eventToEdit.id, 'all', selectedDate)}
                             className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors font-semibold"
                         >
                             すべて削除

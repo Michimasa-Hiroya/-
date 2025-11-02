@@ -86,6 +86,11 @@ export const getEventsForDate = (date: Date, allEvents: VisitEvent[], holidays: 
           return false;
         }
 
+        // Check for recurrence end date
+        if (event.recurring !== 'none' && event.endDate && date.getTime() > event.endDate) {
+            return false;
+        }
+
         const eventStartDate = new Date(event.startDateTime);
         eventStartDate.setHours(0,0,0,0);
         
