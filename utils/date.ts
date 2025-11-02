@@ -96,5 +96,11 @@ export const getEventsForDate = (date: Date, allEvents: VisitEvent[], holidays: 
             return false;
         }
       })
-      .sort((a, b) => a.startDateTime - b.startDateTime);
+      .sort((a, b) => {
+        const dateA = new Date(a.startDateTime);
+        const dateB = new Date(b.startDateTime);
+        const timeA = dateA.getHours() * 60 + dateA.getMinutes();
+        const timeB = dateB.getHours() * 60 + dateB.getMinutes();
+        return timeA - timeB;
+      });
 };
