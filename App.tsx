@@ -109,8 +109,10 @@ function App() {
             <button onClick={handlePrevMonth} className="p-2 rounded-full hover:bg-gray-200 transition-colors">
               <ChevronLeftIcon className="w-5 h-5 text-gray-600" />
             </button>
-            <h2 className="text-xl font-semibold w-40 text-center">
-              {currentDate.getFullYear()}年 {currentDate.getMonth() + 1}月
+            <h2 
+              className="text-xl font-semibold w-48 text-center tabular-nums"
+            >
+              {`${currentDate.getFullYear()}年 ${currentDate.getMonth() + 1}月`}
             </h2>
             <button onClick={handleNextMonth} className="p-2 rounded-full hover:bg-gray-200 transition-colors">
               <ChevronRightIcon className="w-5 h-5 text-gray-600" />
@@ -118,9 +120,8 @@ function App() {
           </div>
         </header>
 
-        <main>
-          <div className="flex flex-col xl:flex-row gap-8">
-            <div className="xl:flex-grow">
+        <main className="grid grid-cols-1 lg:grid-cols-7 gap-6">
+          <div className="lg:col-span-5">
               <Calendar
                 currentDate={currentDate}
                 viewingDate={viewingDate}
@@ -129,8 +130,8 @@ function App() {
                 onDayClick={handleDayClick}
                 onEventClick={handleEventClick}
               />
-            </div>
-            <div className="xl:w-[450px] xl:flex-shrink-0">
+          </div>
+          <div className="lg:col-span-2">
               <DailyScheduleView 
                 viewingDate={viewingDate}
                 events={events}
@@ -138,7 +139,6 @@ function App() {
                 onAddEvent={handleAddNewEvent}
                 onEventClick={handleEventClick}
               />
-            </div>
           </div>
         </main>
       </div>

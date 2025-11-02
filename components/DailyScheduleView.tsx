@@ -11,26 +11,26 @@ interface DailyScheduleViewProps {
   onEventClick: (event: VisitEvent) => void;
 }
 
-const formatDateWithDay = (date: Date) => {
+const formatFullDateWithDay = (date: Date) => {
     const weekDays = ['日', '月', '火', '水', '木', '金', '土'];
-    return `${date.getMonth() + 1}月${date.getDate()}日 (${weekDays[date.getDay()]})`;
-}
+    return `${date.getFullYear()}年 ${date.getMonth() + 1}月${date.getDate()}日(${weekDays[date.getDay()]})`;
+};
 
 export const DailyScheduleView: React.FC<DailyScheduleViewProps> = ({ viewingDate, events, onAddEvent, onEventClick }) => {
   const dayEvents = getEventsForDate(viewingDate, events);
 
   return (
-    <div className="bg-white rounded-lg shadow-md p-4 md:p-6 h-full flex flex-col" style={{minHeight: '80vh'}}>
+    <div className="bg-white rounded-lg shadow-md p-4 md:p-6 h-full flex flex-col">
       <div className="flex justify-between items-center mb-4 pb-4 border-b">
-        <h2 className="text-xl font-bold text-gray-800">
-          {formatDateWithDay(viewingDate)}
+        <h2 className="text-lg font-bold text-gray-800">
+          {formatFullDateWithDay(viewingDate)}
         </h2>
         <button 
           onClick={onAddEvent}
-          className="flex items-center gap-2 px-3 py-2 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-colors shadow-sm text-sm"
+          className="flex-shrink-0 flex items-center gap-1 px-3 py-2 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-colors shadow-sm text-sm"
         >
-          <PlusIcon className="w-5 h-5" />
-          予定を追加
+          <PlusIcon className="w-4 h-4" />
+          追加
         </button>
       </div>
       
@@ -59,14 +59,9 @@ export const DailyScheduleView: React.FC<DailyScheduleViewProps> = ({ viewingDat
           ))}
         </ul>
       ) : (
-        <div className="flex-grow flex flex-col items-center justify-center text-center text-gray-500">
+        <div className="flex-grow flex flex-col items-center justify-center text-center text-gray-500" style={{minHeight: '200px'}}>
            <svg xmlns="http://www.w3.org/2000/svg" className="w-16 h-16 text-gray-300 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
             </svg>
           <p className="font-semibold">予定はありません</p>
-          <p className="text-sm mt-1">「予定を追加」ボタンから新しい予定を作成できます。</p>
-        </div>
-      )}
-    </div>
-  );
-};
+          <p className="text-sm mt-1">「追加」ボタンから新しい予定を作成できます。</

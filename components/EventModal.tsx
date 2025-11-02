@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { VisitEvent, RecurringType, Duration } from '../types';
 import { TimePicker } from './TimePicker';
-import { TrashIcon, XMarkIcon, ClockIcon } from './Icons';
+import { TrashIcon, XMarkIcon } from './Icons';
 
 interface EventModalProps {
   isOpen: boolean;
@@ -26,7 +26,6 @@ export const EventModal: React.FC<EventModalProps> = ({ isOpen, onClose, onSave,
   useEffect(() => {
     if (eventToEdit) {
       setTitle(eventToEdit.title);
-      // FIX: Corrected typo from eventToToEdit to eventToEdit.
       const d = new Date(eventToEdit.startDateTime);
       setSelectedTime({ hour: d.getHours(), minute: d.getMinutes() });
       setDuration(eventToEdit.duration);
@@ -69,13 +68,18 @@ export const EventModal: React.FC<EventModalProps> = ({ isOpen, onClose, onSave,
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4" onClick={onClose}>
-      <div className="bg-white rounded-xl shadow-2xl w-full max-w-lg relative" onClick={(e) => e.stopPropagation()}>
-        <button onClick={onClose} className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors">
-          <XMarkIcon className="w-6 h-6" />
-        </button>
-        <div className="p-6 sm:p-8">
-          <h2 className="text-2xl font-bold text-gray-800 mb-6">{eventToEdit ? '予定の編集' : '新しい予定'}</h2>
-          
+      <div className="bg-white rounded-xl shadow-2xl w-full max-w-lg flex flex-col max-h-[90vh] sm:max-h-[85vh]" onClick={(e) => e.stopPropagation()}>
+        
+        {/* Header */}
+        <div className="flex-shrink-0 flex justify-between items-center p-6 sm:p-8 border-b border-gray-200">
+          <h2 className="text-2xl font-bold text-gray-800">{eventToEdit ? '予定の編集' : '新しい予定'}</h2>
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 transition-colors">
+            <XMarkIcon className="w-6 h-6" />
+          </button>
+        </div>
+
+        {/* Scrollable Body */}
+        <div className="flex-grow p-6 sm:p-8 overflow-y-auto">
           <div className="space-y-6">
             <input
               type="text"
@@ -133,27 +137,28 @@ export const EventModal: React.FC<EventModalProps> = ({ isOpen, onClose, onSave,
             </div>
 
           </div>
+        </div>
 
-          <div className="mt-8 flex justify-between items-center">
-            <div>
-              {eventToEdit && (
-                <button
-                  onClick={handleDelete}
-                  className="px-4 py-2 text-red-600 hover:bg-red-50 rounded-lg flex items-center gap-2 transition-colors"
-                >
-                  <TrashIcon className="w-5 h-5" />
-                  削除
-                </button>
-              )}
-            </div>
-            <div className="flex gap-3">
-              <button onClick={onClose} className="px-6 py-3 bg-gray-200 text-gray-800 rounded-lg font-semibold hover:bg-gray-300 transition-colors">
-                キャンセル
+        {/* Footer */}
+        <div className="flex-shrink-0 flex justify-between items-center p-6 sm:p-8 border-t border-gray-200">
+          <div>
+            {eventToEdit && (
+              <button
+                onClick={handleDelete}
+                className="px-4 py-2 text-red-600 hover:bg-red-50 rounded-lg flex items-center gap-2 transition-colors"
+              >
+                <TrashIcon className="w-5 h-5" />
+                削除
               </button>
-              <button onClick={handleSave} className="px-6 py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-colors shadow-sm disabled:bg-blue-300" disabled={!title}>
-                保存
-              </button>
-            </div>
+            )}
+          </div>
+          <div className="flex gap-3">
+            <button onClick={onClose} className="px-6 py-3 bg-gray-200 text-gray-800 rounded-lg font-semibold hover:bg-gray-300 transition-colors">
+              キャンセル
+            </button>
+            <button onClick={handleSave} className="px-6 py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-colors shadow-sm disabled:bg-blue-300" disabled={!title}>
+              保存
+            </button>
           </div>
         </div>
       </div>
