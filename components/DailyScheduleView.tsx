@@ -16,8 +16,8 @@ const formatFullDateWithDay = (date: Date) => {
     return `${date.getFullYear()}年 ${date.getMonth() + 1}月${date.getDate()}日(${weekDays[date.getDay()]})`;
 };
 
-export const DailyScheduleView: React.FC<DailyScheduleViewProps> = ({ viewingDate, events, onAddEvent, onEventClick }) => {
-  const dayEvents = getEventsForDate(viewingDate, events);
+export const DailyScheduleView: React.FC<DailyScheduleViewProps> = ({ viewingDate, events, holidays, onAddEvent, onEventClick }) => {
+  const dayEvents = getEventsForDate(viewingDate, events, holidays);
 
   return (
     <div className="bg-white rounded-lg shadow-md p-4 md:p-6 h-full flex flex-col">
@@ -64,4 +64,9 @@ export const DailyScheduleView: React.FC<DailyScheduleViewProps> = ({ viewingDat
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
             </svg>
           <p className="font-semibold">予定はありません</p>
-          <p className="text-sm mt-1">「追加」ボタンから新しい予定を作成できます。</
+          <p className="text-sm mt-1">「追加」ボタンから新しい予定を作成できます。</p>
+        </div>
+      )}
+    </div>
+  );
+};

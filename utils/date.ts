@@ -71,7 +71,10 @@ export const formatDateToYMD = (date: Date): string => {
   return `${year}-${month}-${day}`;
 };
 
-export const getEventsForDate = (date: Date, allEvents: VisitEvent[]): VisitEvent[] => {
+export const getEventsForDate = (date: Date, allEvents: VisitEvent[], holidays: Record<string, string>): VisitEvent[] => {
+    const ymd = formatDateToYMD(date);
+    const isHoliday = !!holidays[ymd];
+
     return allEvents
       .filter(event => {
         const eventStartDate = new Date(event.startDateTime);
@@ -83,8 +86,10 @@ export const getEventsForDate = (date: Date, allEvents: VisitEvent[]): VisitEven
           case 'none':
             return isSameDay(date, eventStartDate);
           case 'weekly':
+            if (isHoliday) return false;
             return date.getDay() === eventStartDate.getDay();
           case 'biweekly':
+            if (isHoliday) return false;
             const weekDiff = differenceInCalendarWeeks(date, eventStartDate);
             return date.getDay() === eventStartDate.getDay() && weekDiff % 2 === 0;
           default:

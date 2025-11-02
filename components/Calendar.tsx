@@ -13,6 +13,18 @@ interface CalendarProps {
 
 const weekDays = ['日', '月', '火', '水', '木', '金', '土'];
 
+const EventItem: React.FC<{ event: VisitEvent, onEventClick: (event: VisitEvent) => void }> = ({ event, onEventClick }) => (
+  <div
+      className="bg-blue-100 text-blue-800 p-1 rounded-md text-xs cursor-pointer hover:bg-blue-200 transition-colors"
+      onClick={(e) => {
+          e.stopPropagation();
+          onEventClick(event);
+      }}
+  >
+      <p className="font-semibold truncate">{event.title}</p>
+  </div>
+);
+
 export const Calendar: React.FC<CalendarProps> = ({ currentDate, viewingDate, events, holidays, onDayClick, onEventClick }) => {
   const monthDays = useMemo(() => getDaysInMonth(currentDate), [currentDate]);
   
@@ -28,7 +40,10 @@ export const Calendar: React.FC<CalendarProps> = ({ currentDate, viewingDate, ev
       <div className="grid grid-cols-7 gap-px">
         {monthDays.map((day, index) => {
           const isCurrentMonth = day.getMonth() === currentDate.getMonth();
-          const dayEvents = getEventsForDate(day, events);
+          const dayEvents = getEventsForDate(day, events, holidays);
+          const amEvents = dayEvents.filter(e => new Date(e.startDateTime).getHours() < 12);
+          const pmEvents = dayEvents.filter(e => new Date(e.startDateTime).getHours() >= 12);
+
           const isViewingDay = isSameDay(day, viewingDate);
           
           const dayOfWeek = day.getDay();
@@ -67,18 +82,11 @@ export const Calendar: React.FC<CalendarProps> = ({ currentDate, viewingDate, ev
               {isHoliday && <div className="text-xs text-red-500 truncate mb-1" style={{fontSize: '0.7rem'}}>{holidayName}</div>}
 
               <div className="flex-grow space-y-1 overflow-y-auto">
-                {dayEvents.map(event => (
-                  <div
-                      key={event.id}
-                      className="bg-blue-100 text-blue-800 p-1 rounded-md text-xs cursor-pointer hover:bg-blue-200 transition-colors"
-                      onClick={(e) => {
-                          e.stopPropagation();
-                          onEventClick(event);
-                      }}
-                  >
-                      <p className="font-semibold truncate">{event.title}</p>
-                  </div>
-                ))}
+                {amEvents.map(event => <EventItem key={event.id} event={event} onEventClick={onEventClick} />)}
+                {amEvents.length > 0 && pmEvents.length > 0 && (
+                  <hr className="my-1 border-t border-gray-200" />
+                )}
+                {pmEvents.map(event => <EventItem key={event.id} event={event} onEventClick={onEventClick} />)}
               </div>
             </div>
           );
