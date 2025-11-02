@@ -28,8 +28,9 @@ export const EventModal: React.FC<EventModalProps> = ({ isOpen, onClose, onSave,
     setShowDeleteConfirm(false); // Reset confirmation on open/change
     if (eventToEdit) {
       setTitle(eventToEdit.title);
-      const d = new Date(eventToEdit.startDateTime);
-      setSelectedTime({ hour: d.getHours(), minute: d.getMinutes() });
+      // When editing, use the time from the event, but the date from the selected occurrence
+      const eventTime = new Date(eventToEdit.startDateTime);
+      setSelectedTime({ hour: eventTime.getHours(), minute: eventTime.getMinutes() });
       setDuration(eventToEdit.duration);
       setRecurring(eventToEdit.recurring);
       setMemo(eventToEdit.memo || '');
@@ -44,12 +45,17 @@ export const EventModal: React.FC<EventModalProps> = ({ isOpen, onClose, onSave,
   }, [eventToEdit, selectedDate, isOpen]);
   
   const handleSave = useCallback(() => {
-    if (!title || !initialDate) return;
+    // For recurring events, we save the time but the date should always refer to the original start date.
+    // For non-recurring events, the date of the occurrence is the start date.
+    const dateForSaving = (recurring !== 'none' && eventToEdit) ? new Date(eventToEdit.startDateTime) : selectedDate;
 
-    const startDateTime = new Date(initialDate);
+    if (!title || !dateForSaving) return;
+
+    const startDateTime = new Date(dateForSaving);
     startDateTime.setHours(selectedTime.hour, selectedTime.minute, 0, 0);
 
     const eventData: VisitEvent = {
+      ...eventToEdit, // preserve deletedOccurrences and original id
       id: eventToEdit?.id || Date.now().toString(),
       title,
       startDateTime: startDateTime.getTime(),
@@ -58,7 +64,7 @@ export const EventModal: React.FC<EventModalProps> = ({ isOpen, onClose, onSave,
       memo,
     };
     onSave(eventData);
-  }, [title, initialDate, selectedTime, duration, recurring, memo, eventToEdit?.id, onSave]);
+  }, [title, selectedDate, selectedTime, duration, recurring, memo, eventToEdit, onSave]);
 
   const handleDelete = useCallback(() => {
     if (eventToEdit?.recurring && eventToEdit.recurring !== 'none') {
@@ -149,7 +155,7 @@ export const EventModal: React.FC<EventModalProps> = ({ isOpen, onClose, onSave,
 
         {/* Footer */}
         <div className="flex-shrink-0 flex justify-between items-center p-6 sm:p-8 border-t border-gray-200">
-          <div className="min-w-[200px]">
+          <div className="flex-grow">
             {eventToEdit && (
                 !showDeleteConfirm ? (
                 <button
@@ -160,29 +166,28 @@ export const EventModal: React.FC<EventModalProps> = ({ isOpen, onClose, onSave,
                     削除
                 </button>
                 ) : (
-                    <div className="flex items-center gap-2 text-sm">
-                        <p className="font-semibold text-gray-700 mr-2">削除しますか？</p>
+                    <div className="flex items-center gap-3">
                         <button
                             onClick={() => onDelete(eventToEdit.id, 'single', selectedDate)}
-                            className="px-3 py-1.5 bg-yellow-500 text-white rounded-md hover:bg-yellow-600 transition-colors"
+                            className="px-4 py-2 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600 transition-colors font-semibold"
                         >
-                            この日のみ
+                            この日のみ削除
                         </button>
                         <button
                             onClick={() => onDelete(eventToEdit.id, 'all', null)}
-                            className="px-3 py-1.5 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors"
+                            className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors font-semibold"
                         >
-                            すべて
+                            すべて削除
                         </button>
                     </div>
                 )
             )}
           </div>
           <div className="flex gap-3">
-            <button onClick={showDeleteConfirm ? () => setShowDeleteConfirm(false) : onClose} className="px-6 py-3 bg-gray-200 text-gray-800 rounded-lg font-semibold hover:bg-gray-300 transition-colors">
+            <button onClick={showDeleteConfirm ? () => setShowDeleteConfirm(false) : onClose} className="px-5 py-2.5 bg-gray-200 text-gray-800 rounded-lg font-semibold hover:bg-gray-300 transition-colors">
               {showDeleteConfirm ? '戻る' : 'キャンセル'}
             </button>
-            <button onClick={handleSave} className="px-6 py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-colors shadow-sm disabled:bg-gray-400 disabled:cursor-not-allowed" disabled={!title || showDeleteConfirm}>
+            <button onClick={handleSave} className="px-5 py-2.5 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-colors shadow-sm disabled:bg-gray-400 disabled:cursor-not-allowed" disabled={!title || showDeleteConfirm}>
               保存
             </button>
           </div>

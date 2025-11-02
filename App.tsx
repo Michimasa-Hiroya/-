@@ -65,9 +65,9 @@ function App() {
     setIsModalOpen(true);
   }, [viewingDate]);
   
-  const handleEventClick = useCallback((event: VisitEvent) => {
+  const handleEventClick = useCallback((event: VisitEvent, dateOfOccurrence: Date) => {
     setEventToEdit(event);
-    setSelectedDateForModal(new Date(event.startDateTime));
+    setSelectedDateForModal(dateOfOccurrence);
     setIsModalOpen(true);
   }, []);
 
@@ -82,9 +82,11 @@ function App() {
       const eventIndex = prevEvents.findIndex(e => e.id === eventData.id);
       if (eventIndex > -1) {
         const updatedEvents = [...prevEvents];
+        // When saving, we keep the original event's deletedOccurrences,
+        // unless we are changing a recurring event to non-recurring, in which case we clear it.
         const oldEvent = prevEvents[eventIndex];
-        // Preserve existing deletedOccurrences when updating an event
-        updatedEvents[eventIndex] = { ...eventData, deletedOccurrences: oldEvent.deletedOccurrences };
+        const newDeletedOccurrences = eventData.recurring !== 'none' ? oldEvent.deletedOccurrences : undefined;
+        updatedEvents[eventIndex] = { ...eventData, deletedOccurrences: newDeletedOccurrences };
         return updatedEvents;
       } else {
         return [...prevEvents, eventData];

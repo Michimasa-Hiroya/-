@@ -8,7 +8,7 @@ interface CalendarProps {
   events: VisitEvent[];
   holidays: Record<string, string>;
   onDayClick: (date: Date) => void;
-  onEventClick: (event: VisitEvent) => void;
+  onEventClick: (event: VisitEvent, date: Date) => void;
 }
 
 const weekDays = ['日', '月', '火', '水', '木', '金', '土'];
@@ -41,8 +41,16 @@ export const Calendar: React.FC<CalendarProps> = ({ currentDate, viewingDate, ev
         {monthDays.map((day, index) => {
           const isCurrentMonth = day.getMonth() === currentDate.getMonth();
           const dayEvents = getEventsForDate(day, events, holidays);
-          const amEvents = dayEvents.filter(e => new Date(e.startDateTime).getHours() < 12);
-          const pmEvents = dayEvents.filter(e => new Date(e.startDateTime).getHours() >= 12);
+          const amEvents = dayEvents.filter(e => {
+            const eventDate = new Date(e.startDateTime);
+            eventDate.setFullYear(day.getFullYear(), day.getMonth(), day.getDate());
+            return eventDate.getHours() < 12;
+          });
+          const pmEvents = dayEvents.filter(e => {
+            const eventDate = new Date(e.startDateTime);
+            eventDate.setFullYear(day.getFullYear(), day.getMonth(), day.getDate());
+            return eventDate.getHours() >= 12;
+          });
 
           const isViewingDay = isSameDay(day, viewingDate);
           
@@ -82,11 +90,11 @@ export const Calendar: React.FC<CalendarProps> = ({ currentDate, viewingDate, ev
               {isHoliday && <div className="text-xs text-red-500 truncate mb-1" style={{fontSize: '0.7rem'}}>{holidayName}</div>}
 
               <div className="flex-grow space-y-1 overflow-y-auto">
-                {amEvents.map(event => <EventItem key={event.id} event={event} onEventClick={onEventClick} />)}
+                {amEvents.map(event => <EventItem key={`${event.id}-${day.getTime()}`} event={event} onEventClick={(clickedEvent) => onEventClick(clickedEvent, day)} />)}
                 {amEvents.length > 0 && pmEvents.length > 0 && (
                   <hr className="my-1 border-t border-gray-400" />
                 )}
-                {pmEvents.map(event => <EventItem key={event.id} event={event} onEventClick={onEventClick} />)}
+                {pmEvents.map(event => <EventItem key={`${event.id}-${day.getTime()}`} event={event} onEventClick={(clickedEvent) => onEventClick(clickedEvent, day)} />)}
               </div>
             </div>
           );

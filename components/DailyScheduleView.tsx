@@ -8,7 +8,7 @@ interface DailyScheduleViewProps {
   events: VisitEvent[];
   holidays: Record<string, string>;
   onAddEvent: () => void;
-  onEventClick: (event: VisitEvent) => void;
+  onEventClick: (event: VisitEvent, date: Date) => void;
 }
 
 const formatFullDateWithDay = (date: Date) => {
@@ -36,16 +36,21 @@ export const DailyScheduleView: React.FC<DailyScheduleViewProps> = ({ viewingDat
       
       {dayEvents.length > 0 ? (
         <ul className="space-y-3 overflow-y-auto flex-grow">
-          {dayEvents.map(event => (
-            <li key={event.id}>
+          {dayEvents.map(event => {
+            const eventDateForThisOccurrence = new Date(viewingDate);
+            const originalEventTime = new Date(event.startDateTime);
+            eventDateForThisOccurrence.setHours(originalEventTime.getHours(), originalEventTime.getMinutes());
+            
+            return (
+            <li key={`${event.id}-${viewingDate.getTime()}`}>
               <button
-                onClick={() => onEventClick(event)}
+                onClick={() => onEventClick(event, viewingDate)}
                 className="w-full flex items-start gap-4 p-3 rounded-lg hover:bg-blue-50 text-left transition-colors duration-200"
               >
                 <div className="flex-shrink-0 text-center w-20 pt-1">
-                  <p className="font-mono font-semibold text-gray-800">{formatTime(new Date(event.startDateTime))}</p>
+                  <p className="font-mono font-semibold text-gray-800">{formatTime(eventDateForThisOccurrence)}</p>
                   <p className="font-mono text-sm text-gray-500">|</p>
-                  <p className="font-mono font-semibold text-gray-800">{formatTime(getEndTime(event.startDateTime, event.duration))}</p>
+                  <p className="font-mono font-semibold text-gray-800">{formatTime(getEndTime(eventDateForThisOccurrence.getTime(), event.duration))}</p>
                 </div>
                 <div className="flex-grow border-l-4 border-blue-400 pl-4">
                   <h3 className="font-bold text-gray-900">{event.title}</h3>
@@ -56,11 +61,11 @@ export const DailyScheduleView: React.FC<DailyScheduleViewProps> = ({ viewingDat
                 </div>
               </button>
             </li>
-          ))}
+          )})}
         </ul>
       ) : (
         <div className="flex-grow flex flex-col items-center justify-center text-center text-gray-500" style={{minHeight: '200px'}}>
-           <svg xmlns="http://www.w3.org/2000/svg" className="w-16 h-16 text-gray-300 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+           <svg xmlns="http://www.w.org/2000/svg" className="w-16 h-16 text-gray-300 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
             </svg>
           <p className="font-semibold">予定はありません</p>
