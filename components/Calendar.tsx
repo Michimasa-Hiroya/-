@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 import { VisitEvent } from '../types';
-import { getDaysInMonth, isSameDay, formatTime, getEndTime, formatDateToYMD, getEventsForDate } from '../utils/date';
+import { getDaysInMonth, isSameDay, formatDateToYMD, getEventsForDate } from '../utils/date';
 
 interface CalendarProps {
   currentDate: Date;
@@ -67,23 +67,18 @@ export const Calendar: React.FC<CalendarProps> = ({ currentDate, viewingDate, ev
               {isHoliday && <div className="text-xs text-red-500 truncate mb-1" style={{fontSize: '0.7rem'}}>{holidayName}</div>}
 
               <div className="flex-grow space-y-1 overflow-y-auto">
-                {dayEvents.map(event => {
-                    const startTime = formatTime(new Date(event.startDateTime));
-                    const endTime = formatTime(getEndTime(event.startDateTime, event.duration));
-                    return (
-                        <div
-                            key={event.id}
-                            className="bg-blue-100 text-blue-800 p-1.5 rounded-md text-xs cursor-pointer hover:bg-blue-200 transition-colors"
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                onEventClick(event);
-                            }}
-                        >
-                            <p className="font-semibold truncate">{event.title}</p>
-                            <p>{startTime} - {endTime}</p>
-                        </div>
-                    );
-                })}
+                {dayEvents.map(event => (
+                  <div
+                      key={event.id}
+                      className="bg-blue-100 text-blue-800 p-1 rounded-md text-xs cursor-pointer hover:bg-blue-200 transition-colors"
+                      onClick={(e) => {
+                          e.stopPropagation();
+                          onEventClick(event);
+                      }}
+                  >
+                      <p className="font-semibold truncate">{event.title}</p>
+                  </div>
+                ))}
               </div>
             </div>
           );
