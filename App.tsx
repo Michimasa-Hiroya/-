@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { Calendar } from './components/Calendar';
 import { EventModal } from './components/EventModal';
 import { ChevronLeftIcon, ChevronRightIcon } from './components/Icons';
@@ -17,6 +17,8 @@ function App() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedDateForModal, setSelectedDateForModal] = useState<Date | null>(null);
   const [eventToEdit, setEventToEdit] = useState<VisitEvent | null>(null);
+
+  const dailyScheduleRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const fetchHolidays = async () => {
@@ -52,6 +54,9 @@ function App() {
   
   const handleDayClick = useCallback((date: Date) => {
     setViewingDate(date);
+    if (window.innerWidth < 1024) { // lg breakpoint
+        dailyScheduleRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
   }, []);
 
   const handleAddNewEvent = useCallback(() => {
@@ -131,7 +136,7 @@ function App() {
                 onEventClick={handleEventClick}
               />
           </div>
-          <div className="lg:col-span-2">
+          <div className="lg:col-span-2" ref={dailyScheduleRef}>
               <DailyScheduleView 
                 viewingDate={viewingDate}
                 events={events}

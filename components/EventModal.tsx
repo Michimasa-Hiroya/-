@@ -17,7 +17,7 @@ const DURATIONS: Duration[] = [20, 30, 40, 60, 90];
 export const EventModal: React.FC<EventModalProps> = ({ isOpen, onClose, onSave, onDelete, eventToEdit, selectedDate }) => {
   const [title, setTitle] = useState('');
   const [selectedTime, setSelectedTime] = useState({ hour: 9, minute: 0 });
-  const [duration, setDuration] = useState<Duration>(60);
+  const [duration, setDuration] = useState<Duration>(40);
   const [recurring, setRecurring] = useState<RecurringType>('none');
   const [memo, setMemo] = useState('');
   
@@ -35,7 +35,7 @@ export const EventModal: React.FC<EventModalProps> = ({ isOpen, onClose, onSave,
       // Reset form for new event
       setTitle('');
       setSelectedTime({ hour: 9, minute: 0 });
-      setDuration(60);
+      setDuration(40);
       setRecurring('none');
       setMemo('');
     }
@@ -81,18 +81,22 @@ export const EventModal: React.FC<EventModalProps> = ({ isOpen, onClose, onSave,
         {/* Scrollable Body */}
         <div className="flex-grow p-6 sm:p-8 overflow-y-auto">
           <div className="space-y-6">
-            <input
-              type="text"
-              placeholder="利用者名または訪問内容"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              className="w-full px-4 py-3 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-shadow"
-            />
-            
             <div className="flex flex-col items-center">
                 <TimePicker initialHour={selectedTime.hour} initialMinute={selectedTime.minute} onTimeChange={setSelectedTime} />
             </div>
 
+            <div>
+              <label htmlFor="event-title" className="text-sm font-medium text-gray-700 mb-2 block">利用者名</label>
+              <input
+                id="event-title"
+                type="text"
+                placeholder="利用者名または訪問内容"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                className="w-full px-4 py-3 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-shadow"
+              />
+            </div>
+            
             <div>
               <label className="text-sm font-medium text-gray-700 mb-2 block">時間 (分)</label>
               <div className="flex flex-wrap gap-2">
