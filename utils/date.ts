@@ -75,8 +75,17 @@ export const getEventsForDate = (date: Date, allEvents: VisitEvent[], holidays: 
     const ymd = formatDateToYMD(date);
     const isHoliday = !!holidays[ymd];
 
+    const dateStartOfDay = new Date(date);
+    dateStartOfDay.setHours(0, 0, 0, 0);
+    const dateTimestamp = dateStartOfDay.getTime();
+
     return allEvents
       .filter(event => {
+        // New check for single deleted occurrences for recurring events
+        if (event.recurring !== 'none' && event.deletedOccurrences?.includes(dateTimestamp)) {
+          return false;
+        }
+
         const eventStartDate = new Date(event.startDateTime);
         eventStartDate.setHours(0,0,0,0);
         

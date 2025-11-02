@@ -10,4 +10,5 @@ export interface VisitEvent {
   duration: Duration;
   recurring: RecurringType;
   memo?: string;
+  deletedOccurrences?: number[]; // Array of timestamps (start of day) for deleted single events
 }

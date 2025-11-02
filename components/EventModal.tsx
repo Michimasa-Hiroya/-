@@ -7,7 +7,7 @@ interface EventModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSave: (event: VisitEvent) => void;
-  onDelete: (eventId: string) => void;
+  onDelete: (eventId: string, deleteType: 'single' | 'all', dateOfOccurrence: Date | null) => void;
   eventToEdit: VisitEvent | null;
   selectedDate: Date | null;
 }
@@ -20,10 +20,12 @@ export const EventModal: React.FC<EventModalProps> = ({ isOpen, onClose, onSave,
   const [duration, setDuration] = useState<Duration>(40);
   const [recurring, setRecurring] = useState<RecurringType>('none');
   const [memo, setMemo] = useState('');
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   
   const initialDate = useMemo(() => eventToEdit ? new Date(eventToEdit.startDateTime) : selectedDate, [eventToEdit, selectedDate]);
 
   useEffect(() => {
+    setShowDeleteConfirm(false); // Reset confirmation on open/change
     if (eventToEdit) {
       setTitle(eventToEdit.title);
       const d = new Date(eventToEdit.startDateTime);
@@ -59,8 +61,10 @@ export const EventModal: React.FC<EventModalProps> = ({ isOpen, onClose, onSave,
   }, [title, initialDate, selectedTime, duration, recurring, memo, eventToEdit?.id, onSave]);
 
   const handleDelete = useCallback(() => {
-    if (eventToEdit) {
-      onDelete(eventToEdit.id);
+    if (eventToEdit?.recurring && eventToEdit.recurring !== 'none') {
+      setShowDeleteConfirm(true);
+    } else if (eventToEdit) {
+      onDelete(eventToEdit.id, 'all', null);
     }
   }, [eventToEdit, onDelete]);
 
@@ -145,22 +149,40 @@ export const EventModal: React.FC<EventModalProps> = ({ isOpen, onClose, onSave,
 
         {/* Footer */}
         <div className="flex-shrink-0 flex justify-between items-center p-6 sm:p-8 border-t border-gray-200">
-          <div>
+          <div className="min-w-[200px]">
             {eventToEdit && (
-              <button
-                onClick={handleDelete}
-                className="px-4 py-2 text-red-600 hover:bg-red-50 rounded-lg flex items-center gap-2 transition-colors"
-              >
-                <TrashIcon className="w-5 h-5" />
-                削除
-              </button>
+                !showDeleteConfirm ? (
+                <button
+                    onClick={handleDelete}
+                    className="px-4 py-2 text-red-600 hover:bg-red-50 rounded-lg flex items-center gap-2 transition-colors"
+                >
+                    <TrashIcon className="w-5 h-5" />
+                    削除
+                </button>
+                ) : (
+                    <div className="flex items-center gap-2 text-sm">
+                        <p className="font-semibold text-gray-700 mr-2">削除しますか？</p>
+                        <button
+                            onClick={() => onDelete(eventToEdit.id, 'single', selectedDate)}
+                            className="px-3 py-1.5 bg-yellow-500 text-white rounded-md hover:bg-yellow-600 transition-colors"
+                        >
+                            この日のみ
+                        </button>
+                        <button
+                            onClick={() => onDelete(eventToEdit.id, 'all', null)}
+                            className="px-3 py-1.5 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors"
+                        >
+                            すべて
+                        </button>
+                    </div>
+                )
             )}
           </div>
           <div className="flex gap-3">
-            <button onClick={onClose} className="px-6 py-3 bg-gray-200 text-gray-800 rounded-lg font-semibold hover:bg-gray-300 transition-colors">
-              キャンセル
+            <button onClick={showDeleteConfirm ? () => setShowDeleteConfirm(false) : onClose} className="px-6 py-3 bg-gray-200 text-gray-800 rounded-lg font-semibold hover:bg-gray-300 transition-colors">
+              {showDeleteConfirm ? '戻る' : 'キャンセル'}
             </button>
-            <button onClick={handleSave} className="px-6 py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-colors shadow-sm disabled:bg-blue-300" disabled={!title}>
+            <button onClick={handleSave} className="px-6 py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-colors shadow-sm disabled:bg-gray-400 disabled:cursor-not-allowed" disabled={!title || showDeleteConfirm}>
               保存
             </button>
           </div>

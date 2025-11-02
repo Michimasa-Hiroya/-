@@ -82,7 +82,9 @@ function App() {
       const eventIndex = prevEvents.findIndex(e => e.id === eventData.id);
       if (eventIndex > -1) {
         const updatedEvents = [...prevEvents];
-        updatedEvents[eventIndex] = eventData;
+        const oldEvent = prevEvents[eventIndex];
+        // Preserve existing deletedOccurrences when updating an event
+        updatedEvents[eventIndex] = { ...eventData, deletedOccurrences: oldEvent.deletedOccurrences };
         return updatedEvents;
       } else {
         return [...prevEvents, eventData];
@@ -91,8 +93,26 @@ function App() {
     handleCloseModal();
   }, [setEvents, handleCloseModal]);
   
-  const handleDeleteEvent = useCallback((eventId: string) => {
-    setEvents(prevEvents => prevEvents.filter(e => e.id !== eventId));
+  const handleDeleteEvent = useCallback((eventId: string, deleteType: 'single' | 'all', dateOfOccurrence: Date | null) => {
+    if (deleteType === 'all') {
+        setEvents(prevEvents => prevEvents.filter(e => e.id !== eventId));
+    } else if (deleteType === 'single' && dateOfOccurrence) {
+        setEvents(prevEvents => {
+            return prevEvents.map(e => {
+                if (e.id === eventId) {
+                    const deletedOccurrences = e.deletedOccurrences ? [...e.deletedOccurrences] : [];
+                    const occurrenceTimestamp = new Date(dateOfOccurrence);
+                    occurrenceTimestamp.setHours(0, 0, 0, 0);
+                    // Avoid duplicates
+                    if (!deletedOccurrences.includes(occurrenceTimestamp.getTime())) {
+                        deletedOccurrences.push(occurrenceTimestamp.getTime());
+                    }
+                    return { ...e, deletedOccurrences };
+                }
+                return e;
+            });
+        });
+    }
     handleCloseModal();
   }, [setEvents, handleCloseModal]);
   
