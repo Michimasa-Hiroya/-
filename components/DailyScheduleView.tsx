@@ -50,6 +50,9 @@ export const DailyScheduleView: React.FC<DailyScheduleViewProps> = ({ viewingDat
                 <div className="flex-grow border-l-4 border-blue-400 pl-4">
                   <h3 className="font-bold text-gray-900">{event.title}</h3>
                   <p className="text-sm text-gray-600">{event.duration}分</p>
+                  {event.memo && (
+                    <p className="text-sm text-gray-500 mt-1 whitespace-pre-wrap">{event.memo}</p>
+                  )}
                 </div>
               </button>
             </li>

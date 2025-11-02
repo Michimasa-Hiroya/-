@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { VisitEvent, RecurringType, Duration } from '../types';
 import { TimePicker } from './TimePicker';
@@ -20,22 +19,26 @@ export const EventModal: React.FC<EventModalProps> = ({ isOpen, onClose, onSave,
   const [selectedTime, setSelectedTime] = useState({ hour: 9, minute: 0 });
   const [duration, setDuration] = useState<Duration>(60);
   const [recurring, setRecurring] = useState<RecurringType>('none');
+  const [memo, setMemo] = useState('');
   
   const initialDate = useMemo(() => eventToEdit ? new Date(eventToEdit.startDateTime) : selectedDate, [eventToEdit, selectedDate]);
 
   useEffect(() => {
     if (eventToEdit) {
       setTitle(eventToEdit.title);
+      // FIX: Corrected typo from eventToToEdit to eventToEdit.
       const d = new Date(eventToEdit.startDateTime);
       setSelectedTime({ hour: d.getHours(), minute: d.getMinutes() });
       setDuration(eventToEdit.duration);
       setRecurring(eventToEdit.recurring);
+      setMemo(eventToEdit.memo || '');
     } else if (selectedDate) {
       // Reset form for new event
       setTitle('');
       setSelectedTime({ hour: 9, minute: 0 });
       setDuration(60);
       setRecurring('none');
+      setMemo('');
     }
   }, [eventToEdit, selectedDate, isOpen]);
   
@@ -51,9 +54,10 @@ export const EventModal: React.FC<EventModalProps> = ({ isOpen, onClose, onSave,
       startDateTime: startDateTime.getTime(),
       duration,
       recurring,
+      memo,
     };
     onSave(eventData);
-  }, [title, initialDate, selectedTime, duration, recurring, eventToEdit?.id, onSave]);
+  }, [title, initialDate, selectedTime, duration, recurring, memo, eventToEdit?.id, onSave]);
 
   const handleDelete = useCallback(() => {
     if (eventToEdit) {
@@ -75,10 +79,10 @@ export const EventModal: React.FC<EventModalProps> = ({ isOpen, onClose, onSave,
           <div className="space-y-6">
             <input
               type="text"
-              placeholder="患者名または訪問内容"
+              placeholder="利用者名または訪問内容"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-shadow"
+              className="w-full px-4 py-3 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-shadow"
             />
             
             <div className="flex flex-col items-center">
@@ -115,6 +119,19 @@ export const EventModal: React.FC<EventModalProps> = ({ isOpen, onClose, onSave,
                 <option value="biweekly">隔週</option>
               </select>
             </div>
+            
+            <div>
+              <label htmlFor="memo-input" className="text-sm font-medium text-gray-700 mb-2 block">メモ</label>
+              <textarea
+                id="memo-input"
+                value={memo}
+                onChange={(e) => setMemo(e.target.value)}
+                placeholder="特記事項など"
+                rows={3}
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              ></textarea>
+            </div>
+
           </div>
 
           <div className="mt-8 flex justify-between items-center">

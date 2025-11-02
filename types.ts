@@ -9,4 +9,5 @@ export interface VisitEvent {
   startDateTime: number; // Stored as a timestamp for easy comparison and serialization
   duration: Duration;
   recurring: RecurringType;
+  memo?: string;
 }

@@ -5,8 +5,10 @@ import { ChevronLeftIcon, ChevronRightIcon } from './components/Icons';
 import { useLocalStorage } from './hooks/useLocalStorage';
 import { VisitEvent } from './types';
 import { DailyScheduleView } from './components/DailyScheduleView';
+import { PasswordScreen } from './components/PasswordScreen';
 
 function App() {
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [currentDate, setCurrentDate] = useState(new Date());
   const [viewingDate, setViewingDate] = useState(new Date());
   const [events, setEvents] = useLocalStorage<VisitEvent[]>('visit-nurse-schedule-events', []);
@@ -18,7 +20,6 @@ function App() {
 
   useEffect(() => {
     const fetchHolidays = async () => {
-        // Only fetch if local storage is empty or stale (e.g., check once a year)
         if (Object.keys(holidays).length === 0) {
             try {
                 const response = await fetch('https://holidays-jp.github.io/api/v1/date.json');
@@ -75,12 +76,10 @@ function App() {
     setEvents(prevEvents => {
       const eventIndex = prevEvents.findIndex(e => e.id === eventData.id);
       if (eventIndex > -1) {
-        // Update existing event
         const updatedEvents = [...prevEvents];
         updatedEvents[eventIndex] = eventData;
         return updatedEvents;
       } else {
-        // Add new event
         return [...prevEvents, eventData];
       }
     });
@@ -91,6 +90,10 @@ function App() {
     setEvents(prevEvents => prevEvents.filter(e => e.id !== eventId));
     handleCloseModal();
   }, [setEvents, handleCloseModal]);
+  
+  if (!isAuthenticated) {
+    return <PasswordScreen onSuccess={() => setIsAuthenticated(true)} />;
+  }
 
   return (
     <div className="min-h-screen bg-gray-100 text-gray-800 p-4 sm:p-6 lg:p-8">
