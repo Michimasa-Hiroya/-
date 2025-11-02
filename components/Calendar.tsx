@@ -54,9 +54,9 @@ export const Calendar: React.FC<CalendarProps> = ({ currentDate, viewingDate, ev
           const isHoliday = !!holidayName;
           const isTodayDate = isToday(day);
 
-          let dayNumberClasses = "text-sm font-medium mb-1";
+          let dayNumberClasses = "text-3xl font-medium mb-1";
           if (isTodayDate) {
-              dayNumberClasses += ` ${isHoliday ? 'bg-red-500' : 'bg-blue-600'} text-white rounded-full w-7 h-7 flex items-center justify-center font-bold`;
+              dayNumberClasses = `text-3xl ${isHoliday ? 'bg-red-500' : 'bg-blue-600'} text-white rounded-full w-12 h-12 flex items-center justify-center font-bold`;
           } else {
              if (isSaturday) dayNumberClasses += ' text-blue-600';
              if (isSunday || isHoliday) dayNumberClasses += ' text-red-500';
@@ -84,7 +84,7 @@ export const Calendar: React.FC<CalendarProps> = ({ currentDate, viewingDate, ev
               <div className="flex-grow space-y-1 overflow-y-auto">
                 {amEvents.map(event => <EventItem key={event.id} event={event} onEventClick={onEventClick} />)}
                 {amEvents.length > 0 && pmEvents.length > 0 && (
-                  <hr className="my-1 border-t border-gray-200" />
+                  <hr className="my-1 border-t border-gray-400" />
                 )}
                 {pmEvents.map(event => <EventItem key={event.id} event={event} onEventClick={onEventClick} />)}
               </div>
