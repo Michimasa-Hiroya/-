@@ -14,38 +14,41 @@ let firebaseConfig: any = {
   firestoreDatabaseId: import.meta.env.VITE_FIREBASE_DATABASE_ID || "(default)"
 };
 
-// If environment variables are missing, try to load from the local JSON file
-// We use a dynamic import with a variable to prevent Rollup from failing the build if the file is missing
-if (!firebaseConfig.apiKey) {
-  try {
-    const configPath = './firebase-applet-config.json';
-    const module = await import(/* @vite-ignore */ configPath);
-    firebaseConfig = module.default;
-  } catch (e) {
-    console.warn("Could not load Firebase config from environment or JSON file.");
-  }
-}
-
 // Initialize Firebase and export instances
-let app;
-let db;
-let auth;
+let app: any = null;
+let db: any = null;
+let auth: any = null;
 let initError: string | null = null;
 
-try {
-  if (firebaseConfig && firebaseConfig.apiKey) {
-    app = firebaseApp.initializeApp(firebaseConfig);
-    db = getFirestore(app, firebaseConfig.firestoreDatabaseId || "(default)");
-    auth = getAuth(app);
-  } else {
-    throw new Error("Firebase configuration is missing. Please check your environment variables on Render.");
+// Function to initialize Firebase
+async function initializeFirebase() {
+  if (!firebaseConfig.apiKey) {
+    try {
+      // @ts-ignore
+      const module = await import('./firebase-applet-config.json');
+      firebaseConfig = { ...firebaseConfig, ...module.default };
+    } catch (e) {
+      console.warn("Could not load Firebase config from environment or JSON file.");
+    }
   }
-} catch (e: any) {
-  console.error("Firebase Initialization Error:", e);
-  initError = e.message || "An unknown error occurred during Firebase initialization.";
-  app = null;
-  db = null;
-  auth = null;
+
+  try {
+    if (firebaseConfig && firebaseConfig.apiKey) {
+      app = firebaseApp.initializeApp(firebaseConfig);
+      db = getFirestore(app, firebaseConfig.firestoreDatabaseId || "(default)");
+      auth = getAuth(app);
+    } else {
+      throw new Error("Firebase configuration is missing. Please check your environment variables on Render.");
+    }
+  } catch (e: any) {
+    console.error("Firebase Initialization Error:", e);
+    initError = e.message || "An unknown error occurred during Firebase initialization.";
+  }
 }
+
+// Start initialization immediately
+// Note: We still export db and auth, but they might be null initially.
+// The app components should handle null db/auth gracefully or wait for initialization.
+initializeFirebase();
 
 export { db, auth, initError };
