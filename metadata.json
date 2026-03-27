@@ -1,5 +1,5 @@
 {
   "name": "訪問スケジュール",
-  "description": "訪問看護のスケジュール管理アプリです。ドメイン: visit-schedule.tech",
+  "description": "訪問スケジュール管理アプリです。ドメイン: visit-schedule.tech",
   "requestFramePermissions": []
 }
