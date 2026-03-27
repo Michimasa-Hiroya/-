@@ -110,6 +110,22 @@ export const getEventsForDate = (date: Date, allEvents: VisitEvent[], holidays: 
             return false;
         }
       })
+      .map(event => {
+        // Apply overrides if any
+        if (event.overriddenOccurrences) {
+          const override = event.overriddenOccurrences.find(o => o.originalDate === dateTimestamp);
+          if (override) {
+            return {
+              ...event,
+              startDateTime: override.startDateTime,
+              duration: override.duration,
+              memo: override.memo !== undefined ? override.memo : event.memo,
+              title: override.title !== undefined ? override.title : event.title,
+            };
+          }
+        }
+        return event;
+      })
       .sort((a, b) => {
         const dateA = new Date(a.startDateTime);
         const dateB = new Date(b.startDateTime);

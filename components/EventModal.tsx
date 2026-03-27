@@ -6,26 +6,28 @@ import { TrashIcon, XMarkIcon } from './Icons';
 interface EventModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSave: (event: VisitEvent) => void;
-  onDelete: (eventId: string, deleteType: 'single' | 'all', dateOfOccurrence: Date | null) => void;
+  onSave: (event: VisitEvent, updateType: 'single' | 'future' | 'all', originalDate?: Date) => void;
+  onDelete: (eventId: string, deleteType: 'single' | 'future' | 'all', dateOfOccurrence: Date | null) => void;
   eventToEdit: VisitEvent | null;
   selectedDate: Date | null;
 }
 
 const DURATIONS: Duration[] = [20, 30, 40, 60, 90];
 
-export const EventModal: React.FC<EventModalProps> = ({ isOpen, onClose, onSave, onDelete, eventToEdit, selectedDate }) => {
+export const EventModal = ({ isOpen, onClose, onSave, onDelete, eventToEdit, selectedDate }: EventModalProps) => {
   const [title, setTitle] = useState('');
   const [selectedTime, setSelectedTime] = useState({ hour: 9, minute: 0 });
   const [duration, setDuration] = useState<Duration>(40);
   const [recurring, setRecurring] = useState<RecurringType>('none');
   const [memo, setMemo] = useState('');
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [showUpdateConfirm, setShowUpdateConfirm] = useState(false);
   
   const initialDate = useMemo(() => eventToEdit ? new Date(eventToEdit.startDateTime) : selectedDate, [eventToEdit, selectedDate]);
 
   useEffect(() => {
-    setShowDeleteConfirm(false); // Reset confirmation on open/change
+    setShowDeleteConfirm(false);
+    setShowUpdateConfirm(false);
     if (eventToEdit) {
       setTitle(eventToEdit.title);
       // When editing, use the time from the event, but the date from the selected occurrence
@@ -44,10 +46,8 @@ export const EventModal: React.FC<EventModalProps> = ({ isOpen, onClose, onSave,
     }
   }, [eventToEdit, selectedDate, isOpen]);
   
-  const handleSave = useCallback(() => {
-    // For recurring events, we save the time but the date should always refer to the original start date.
-    // For non-recurring events, the date of the occurrence is the start date.
-    const dateForSaving = (recurring !== 'none' && eventToEdit) ? new Date(eventToEdit.startDateTime) : selectedDate;
+  const handleSave = useCallback((updateType: 'single' | 'future' | 'all' = 'all') => {
+    const dateForSaving = (recurring !== 'none' && eventToEdit && updateType === 'all') ? new Date(eventToEdit.startDateTime) : selectedDate;
 
     if (!title || !dateForSaving) return;
 
@@ -55,7 +55,7 @@ export const EventModal: React.FC<EventModalProps> = ({ isOpen, onClose, onSave,
     startDateTime.setHours(selectedTime.hour, selectedTime.minute, 0, 0);
 
     const eventData: VisitEvent = {
-      ...eventToEdit, // preserve deletedOccurrences and original id
+      ...eventToEdit,
       id: eventToEdit?.id || Date.now().toString(),
       title,
       startDateTime: startDateTime.getTime(),
@@ -63,8 +63,17 @@ export const EventModal: React.FC<EventModalProps> = ({ isOpen, onClose, onSave,
       recurring,
       memo,
     };
-    onSave(eventData);
+    onSave(eventData, updateType, selectedDate || undefined);
+    setShowUpdateConfirm(false);
   }, [title, selectedDate, selectedTime, duration, recurring, memo, eventToEdit, onSave]);
+
+  const handleSaveClick = useCallback(() => {
+    if (eventToEdit?.recurring && eventToEdit.recurring !== 'none') {
+      setShowUpdateConfirm(true);
+    } else {
+      handleSave('all');
+    }
+  }, [eventToEdit, handleSave]);
 
   const handleDelete = useCallback(() => {
     if (eventToEdit?.recurring && eventToEdit.recurring !== 'none') {
@@ -90,10 +99,61 @@ export const EventModal: React.FC<EventModalProps> = ({ isOpen, onClose, onSave,
 
         {/* Scrollable Body */}
         <div className="flex-grow p-6 sm:p-8 overflow-y-auto">
-          <div className="space-y-6">
-            <div className="flex flex-col items-center">
-                <TimePicker initialHour={selectedTime.hour} initialMinute={selectedTime.minute} onTimeChange={setSelectedTime} />
+          {showUpdateConfirm ? (
+            <div className="space-y-6 text-center py-4">
+              <h3 className="text-xl font-bold text-gray-800">変更の適用範囲</h3>
+              <p className="text-gray-600">この変更をどのように適用しますか？</p>
+              <div className="flex flex-col gap-3">
+                <button
+                  onClick={() => handleSave('single')}
+                  className="w-full py-3 bg-blue-100 text-blue-700 rounded-xl font-bold hover:bg-blue-200 transition-colors"
+                >
+                  この日のみ変更
+                </button>
+                <button
+                  onClick={() => handleSave('future')}
+                  className="w-full py-3 bg-blue-500 text-white rounded-xl font-bold hover:bg-blue-600 transition-colors"
+                >
+                  この日とそれ以降を変更
+                </button>
+                <button
+                  onClick={() => handleSave('all')}
+                  className="w-full py-3 bg-blue-700 text-white rounded-xl font-bold hover:bg-blue-800 transition-colors"
+                >
+                  すべて変更
+                </button>
+              </div>
             </div>
+          ) : showDeleteConfirm ? (
+            <div className="space-y-6 text-center py-4">
+              <h3 className="text-xl font-bold text-red-600">削除の確認</h3>
+              <p className="text-gray-600">どの範囲の予定を削除しますか？</p>
+              <div className="flex flex-col gap-3">
+                <button
+                  onClick={() => onDelete(eventToEdit!.id, 'single', selectedDate)}
+                  className="w-full py-3 bg-red-50 text-red-600 rounded-xl font-bold hover:bg-red-100 transition-colors border border-red-200"
+                >
+                  この日のみ削除
+                </button>
+                <button
+                  onClick={() => onDelete(eventToEdit!.id, 'future', selectedDate)}
+                  className="w-full py-3 bg-red-500 text-white rounded-xl font-bold hover:bg-red-600 transition-colors"
+                >
+                  この日とそれ以降を削除
+                </button>
+                <button
+                  onClick={() => onDelete(eventToEdit!.id, 'all', selectedDate)}
+                  className="w-full py-3 bg-red-700 text-white rounded-xl font-bold hover:bg-red-800 transition-colors"
+                >
+                  すべて削除
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div className="space-y-6">
+              <div className="flex flex-col items-center">
+                  <TimePicker initialHour={selectedTime.hour} initialMinute={selectedTime.minute} onTimeChange={setSelectedTime} />
+              </div>
 
             <div>
               <label htmlFor="event-title" className="text-sm font-medium text-gray-700 mb-2 block">利用者名</label>
@@ -149,15 +209,14 @@ export const EventModal: React.FC<EventModalProps> = ({ isOpen, onClose, onSave,
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               ></textarea>
             </div>
-
           </div>
-        </div>
+        )}
+      </div>
 
         {/* Footer */}
         <div className="flex-shrink-0 flex justify-between items-center p-6 sm:p-8 border-t border-gray-200">
           <div className="flex-grow">
-            {eventToEdit && (
-                !showDeleteConfirm ? (
+            {eventToEdit && !showDeleteConfirm && !showUpdateConfirm && (
                 <button
                     onClick={handleDelete}
                     className="px-4 py-2 text-red-600 hover:bg-red-50 rounded-lg flex items-center gap-2 transition-colors"
@@ -165,31 +224,17 @@ export const EventModal: React.FC<EventModalProps> = ({ isOpen, onClose, onSave,
                     <TrashIcon className="w-5 h-5" />
                     削除
                 </button>
-                ) : (
-                    <div className="flex items-center gap-3">
-                        <button
-                            onClick={() => onDelete(eventToEdit.id, 'single', selectedDate)}
-                            className="px-4 py-2 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600 transition-colors font-semibold"
-                        >
-                            この日のみ削除
-                        </button>
-                        <button
-                            onClick={() => onDelete(eventToEdit.id, 'all', selectedDate)}
-                            className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors font-semibold"
-                        >
-                            すべて削除
-                        </button>
-                    </div>
-                )
             )}
           </div>
           <div className="flex gap-3">
-            <button onClick={showDeleteConfirm ? () => setShowDeleteConfirm(false) : onClose} className="px-5 py-2.5 bg-gray-200 text-gray-800 rounded-lg font-semibold hover:bg-gray-300 transition-colors">
-              {showDeleteConfirm ? '戻る' : 'キャンセル'}
+            <button onClick={showDeleteConfirm || showUpdateConfirm ? () => { setShowDeleteConfirm(false); setShowUpdateConfirm(false); } : onClose} className="px-5 py-2.5 bg-gray-200 text-gray-800 rounded-lg font-semibold hover:bg-gray-300 transition-colors">
+              {showDeleteConfirm || showUpdateConfirm ? '戻る' : 'キャンセル'}
             </button>
-            <button onClick={handleSave} className="px-5 py-2.5 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-colors shadow-sm disabled:bg-gray-400 disabled:cursor-not-allowed" disabled={!title || showDeleteConfirm}>
-              保存
-            </button>
+            {!showDeleteConfirm && !showUpdateConfirm && (
+              <button onClick={handleSaveClick} className="px-5 py-2.5 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-colors shadow-sm disabled:bg-gray-400 disabled:cursor-not-allowed" disabled={!title}>
+                保存
+              </button>
+            )}
           </div>
         </div>
       </div>

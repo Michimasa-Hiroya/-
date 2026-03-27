@@ -1,25 +1,33 @@
 import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { Calendar } from './components/Calendar';
 import { EventModal } from './components/EventModal';
-import { ChevronLeftIcon, ChevronRightIcon } from './components/Icons';
+import { HelpModal } from './components/HelpModal';
+import { CreatorModal } from './components/CreatorModal';
+import { ChevronLeftIcon, ChevronRightIcon, LogOutIcon, HelpCircleIcon, InfoIcon } from './components/Icons';
 import { useLocalStorage } from './hooks/useLocalStorage';
 import { VisitEvent } from './types';
 import { DailyScheduleView } from './components/DailyScheduleView';
-import { PasswordScreen } from './components/PasswordScreen';
+import { Spinner } from './components/Spinner';
+import { useEvents } from './hooks/useEvents';
+import { useAuth } from './hooks/useAuth';
+import { Login } from './components/Login';
 
 function App() {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const { user, loading: authLoading, logout } = useAuth();
+  const { events, loading: eventsLoading, addEvent, updateEvent, deleteEvent } = useEvents();
+
   const [currentDate, setCurrentDate] = useState(new Date());
   const [viewingDate, setViewingDate] = useState(new Date());
-  const [events, setEvents] = useLocalStorage<VisitEvent[]>('visit-nurse-schedule-events', []);
   const [holidays, setHolidays] = useLocalStorage<Record<string, string>>('jp-holidays', {});
   
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isHelpModalOpen, setIsHelpModalOpen] = useState(false);
+  const [isCreatorModalOpen, setIsCreatorModalOpen] = useState(false);
   const [selectedDateForModal, setSelectedDateForModal] = useState<Date | null>(null);
   const [eventToEdit, setEventToEdit] = useState<VisitEvent | null>(null);
 
   const dailyScheduleRef = useRef<HTMLDivElement>(null);
-
+  
   useEffect(() => {
     const fetchHolidays = async () => {
         if (Object.keys(holidays).length === 0) {
@@ -77,90 +85,63 @@ function App() {
     setEventToEdit(null);
   }, []);
   
-  const handleSaveEvent = useCallback((eventData: VisitEvent) => {
-    setEvents(prevEvents => {
-      const eventIndex = prevEvents.findIndex(e => e.id === eventData.id);
-      if (eventIndex > -1) {
-        const updatedEvents = [...prevEvents];
-        const finalEventData = { ...eventData };
-
-        // If event is changed to non-recurring, remove recurring-specific properties.
-        if (finalEventData.recurring === 'none') {
-          delete finalEventData.deletedOccurrences;
-          delete finalEventData.endDate;
-        }
-        
-        updatedEvents[eventIndex] = finalEventData;
-        return updatedEvents;
-      } else {
-        return [...prevEvents, eventData];
-      }
-    });
-    handleCloseModal();
-  }, [setEvents, handleCloseModal]);
-  
-  const handleDeleteEvent = useCallback((eventId: string, deleteType: 'single' | 'all', dateOfOccurrence: Date | null) => {
-    if (deleteType === 'all' && dateOfOccurrence) {
-      setEvents(prevEvents => {
-        const eventToModify = prevEvents.find(e => e.id === eventId);
-        if (!eventToModify) return prevEvents;
-
-        const occurrenceDateStart = new Date(dateOfOccurrence);
-        occurrenceDateStart.setHours(0, 0, 0, 0);
-
-        const eventStartDate = new Date(eventToModify.startDateTime);
-        eventStartDate.setHours(0, 0, 0, 0);
-
-        // If deleting from on or before the first occurrence, remove the whole series.
-        if (occurrenceDateStart.getTime() <= eventStartDate.getTime()) {
-          return prevEvents.filter(e => e.id !== eventId);
-        }
-
-        // Otherwise, set an end date to stop recurrence.
-        const newEndDate = new Date(dateOfOccurrence);
-        newEndDate.setDate(newEndDate.getDate() - 1);
-        newEndDate.setHours(23, 59, 59, 999);
-
-        return prevEvents.map(e => {
-          if (e.id === eventId) {
-            return { ...e, endDate: newEndDate.getTime() };
-          }
-          return e;
-        });
-      });
-    } else if (deleteType === 'single' && dateOfOccurrence) {
-        setEvents(prevEvents => {
-            return prevEvents.map(e => {
-                if (e.id === eventId) {
-                    const deletedOccurrences = e.deletedOccurrences ? [...e.deletedOccurrences] : [];
-                    const occurrenceTimestamp = new Date(dateOfOccurrence);
-                    occurrenceTimestamp.setHours(0, 0, 0, 0);
-                    if (!deletedOccurrences.includes(occurrenceTimestamp.getTime())) {
-                        deletedOccurrences.push(occurrenceTimestamp.getTime());
-                    }
-                    return { ...e, deletedOccurrences };
-                }
-                return e;
-            });
-        });
-    } else if (deleteType === 'all') { // Fallback for safety, e.g. if dateOfOccurrence is null
-        setEvents(prevEvents => prevEvents.filter(e => e.id !== eventId));
+  const handleSaveEvent = useCallback(async (eventData: VisitEvent, updateType: 'single' | 'future' | 'all', originalDate?: Date) => {
+    const isNewEvent = !eventToEdit?.id;
+    if (isNewEvent) {
+      const { id, ...newEventData } = eventData;
+      await addEvent(newEventData);
+    } else {
+      await updateEvent(eventData, updateType, originalDate);
     }
     handleCloseModal();
-  }, [setEvents, handleCloseModal]);
+  }, [addEvent, updateEvent, handleCloseModal, eventToEdit]);
   
-  if (!isAuthenticated) {
-    return <PasswordScreen onSuccess={() => setIsAuthenticated(true)} />;
+  const handleDeleteEvent = useCallback(async (eventId: string, deleteType: 'single' | 'future' | 'all', dateOfOccurrence: Date | null) => {
+    await deleteEvent(eventId, deleteType, dateOfOccurrence);
+    handleCloseModal();
+  }, [deleteEvent, handleCloseModal]);
+  
+  if (authLoading) {
+    return <Spinner />;
   }
 
+  if (!user) {
+    return <Login />;
+  }
+
+  if (eventsLoading) {
+    return <Spinner />;
+  }
+  
   return (
     <div className="min-h-screen bg-gray-100 text-gray-800 p-4 sm:p-6 lg:p-8">
       <div className="max-w-screen-2xl mx-auto">
         <header className="flex flex-col sm:flex-row items-center justify-between mb-6">
           <div className="flex items-center space-x-4">
-            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">訪問看護スケジュール</h1>
+            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">訪問スケジュール</h1>
             <button onClick={handleToday} className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium hover:bg-gray-50 transition-colors">
               今日
+            </button>
+            <button 
+              onClick={() => setIsHelpModalOpen(true)}
+              className="p-2 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-full transition-all"
+              title="使い方"
+            >
+              <HelpCircleIcon className="w-5 h-5" />
+            </button>
+            <button 
+              onClick={() => setIsCreatorModalOpen(true)}
+              className="p-2 text-gray-500 hover:text-orange-600 hover:bg-orange-50 rounded-full transition-all"
+              title="製作者情報"
+            >
+              <InfoIcon className="w-5 h-5" />
+            </button>
+            <button 
+              onClick={() => logout()} 
+              className="p-2 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-full transition-all"
+              title="ログアウト"
+            >
+              <LogOutIcon className="w-5 h-5" />
             </button>
           </div>
           <div className="flex items-center space-x-2 mt-4 sm:mt-0">
@@ -208,6 +189,16 @@ function App() {
         onDelete={handleDeleteEvent}
         eventToEdit={eventToEdit}
         selectedDate={selectedDateForModal}
+      />
+
+      <HelpModal 
+        isOpen={isHelpModalOpen} 
+        onClose={() => setIsHelpModalOpen(false)} 
+      />
+
+      <CreatorModal 
+        isOpen={isCreatorModalOpen} 
+        onClose={() => setIsCreatorModalOpen(false)} 
       />
     </div>
   );

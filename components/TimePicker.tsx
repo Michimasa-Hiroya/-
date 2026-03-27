@@ -15,7 +15,7 @@ const MINUTE_RADIUS = CLOCK_CENTER - 28;
 const HOUR_HAND_LENGTH = 70;
 const MINUTE_HAND_LENGTH = 100;
 
-export const TimePicker: React.FC<TimePickerProps> = ({ initialHour, initialMinute, onTimeChange }) => {
+export const TimePicker = ({ initialHour, initialMinute, onTimeChange }: TimePickerProps) => {
   const [view, setView] = useState<'hours' | 'minutes'>('hours');
   const [hour, setHour] = useState(initialHour);
   const [minute, setMinute] = useState(initialMinute);

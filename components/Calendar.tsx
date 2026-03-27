@@ -13,19 +13,25 @@ interface CalendarProps {
 
 const weekDays = ['日', '月', '火', '水', '木', '金', '土'];
 
-const EventItem: React.FC<{ event: VisitEvent, onEventClick: (event: VisitEvent) => void }> = ({ event, onEventClick }) => (
+interface EventItemProps {
+  event: VisitEvent;
+  onEventClick: () => void;
+}
+
+// FIX: Changed component to be of type React.FC<EventItemProps> to help with type inference for the `key` prop.
+const EventItem: React.FC<EventItemProps> = ({ event, onEventClick }) => (
   <div
       className="bg-blue-100 text-blue-800 p-1 rounded-md text-xs cursor-pointer hover:bg-blue-200 transition-colors"
       onClick={(e) => {
           e.stopPropagation();
-          onEventClick(event);
+          onEventClick();
       }}
   >
       <p className="font-semibold truncate">{event.title}</p>
   </div>
 );
 
-export const Calendar: React.FC<CalendarProps> = ({ currentDate, viewingDate, events, holidays, onDayClick, onEventClick }) => {
+export const Calendar = ({ currentDate, viewingDate, events, holidays, onDayClick, onEventClick }: CalendarProps) => {
   const monthDays = useMemo(() => getDaysInMonth(currentDate), [currentDate]);
   
   const isToday = (date: Date) => isSameDay(date, new Date());
@@ -90,11 +96,11 @@ export const Calendar: React.FC<CalendarProps> = ({ currentDate, viewingDate, ev
               {isHoliday && <div className="text-xs text-red-500 truncate mb-1" style={{fontSize: '0.7rem'}}>{holidayName}</div>}
 
               <div className="flex-grow space-y-1 overflow-y-auto">
-                {amEvents.map(event => <EventItem key={`${event.id}-${day.getTime()}`} event={event} onEventClick={(clickedEvent) => onEventClick(clickedEvent, day)} />)}
+                {amEvents.map(event => <EventItem key={`${event.id}-${day.getTime()}`} event={event} onEventClick={() => onEventClick(event, day)} />)}
                 {amEvents.length > 0 && pmEvents.length > 0 && (
                   <hr className="my-1 border-t border-gray-400" />
                 )}
-                {pmEvents.map(event => <EventItem key={`${event.id}-${day.getTime()}`} event={event} onEventClick={(clickedEvent) => onEventClick(clickedEvent, day)} />)}
+                {pmEvents.map(event => <EventItem key={`${event.id}-${day.getTime()}`} event={event} onEventClick={() => onEventClick(event, day)} />)}
               </div>
             </div>
           );
