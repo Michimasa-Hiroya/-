@@ -13,7 +13,7 @@ import { useAuth } from './hooks/useAuth';
 import { Login } from './components/Login';
 
 function App() {
-  const { user, loading: authLoading, logout } = useAuth();
+  const { user, loading: authLoading, logout, initError } = useAuth();
   const { events, loading: eventsLoading, addEvent, updateEvent, deleteEvent } = useEvents();
 
   const [currentDate, setCurrentDate] = useState(new Date());
@@ -101,6 +101,25 @@ function App() {
     handleCloseModal();
   }, [deleteEvent, handleCloseModal]);
   
+  if (initError) {
+    return (
+      <div className="min-h-screen bg-red-50 flex items-center justify-center p-4">
+        <div className="bg-white p-8 rounded-lg shadow-lg max-w-md w-full border-t-4 border-red-500">
+          <h2 className="text-2xl font-bold text-red-700 mb-4">Firebase設定エラー</h2>
+          <p className="text-gray-700 mb-6">
+            Firebaseの初期化に失敗しました。以下のエラーメッセージを確認してください：
+          </p>
+          <div className="bg-gray-100 p-4 rounded font-mono text-sm text-red-600 mb-6 overflow-auto">
+            {initError}
+          </div>
+          <p className="text-sm text-gray-500">
+            Renderでデプロイしている場合は、環境変数（VITE_FIREBASE_*）が正しく設定されているか確認してください。
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   if (authLoading) {
     return <Spinner />;
   }
