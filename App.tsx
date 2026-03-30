@@ -13,7 +13,7 @@ import { useAuth } from './hooks/useAuth';
 import { Login } from './components/Login';
 
 function App() {
-  const { user, loading: authLoading, logout, initError } = useAuth();
+  const { user, isGuest, loading: authLoading, logout, initError } = useAuth();
   const { events, loading: eventsLoading, addEvent, updateEvent, deleteEvent } = useEvents();
 
   const [currentDate, setCurrentDate] = useState(new Date());
@@ -101,7 +101,7 @@ function App() {
     handleCloseModal();
   }, [deleteEvent, handleCloseModal]);
   
-  if (initError) {
+  if (initError && !isGuest) {
     return (
       <div className="min-h-screen bg-red-50 flex items-center justify-center p-4">
         <div className="bg-white p-8 rounded-lg shadow-lg max-w-md w-full border-t-4 border-red-500">
@@ -115,6 +115,12 @@ function App() {
           <p className="text-sm text-gray-500">
             Renderでデプロイしている場合は、環境変数（VITE_FIREBASE_*）が正しく設定されているか確認してください。
           </p>
+          <button 
+            onClick={() => window.location.reload()}
+            className="mt-6 w-full py-3 bg-gray-900 text-white rounded-lg font-semibold hover:bg-gray-800 transition-colors"
+          >
+            再読み込み
+          </button>
         </div>
       </div>
     );
@@ -124,7 +130,7 @@ function App() {
     return <Spinner />;
   }
 
-  if (!user) {
+  if (!user && !isGuest) {
     return <Login />;
   }
 
@@ -137,7 +143,14 @@ function App() {
       <div className="max-w-screen-2xl mx-auto">
         <header className="flex flex-col sm:flex-row items-center justify-between mb-6">
           <div className="flex items-center space-x-4">
-            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">訪問スケジュール</h1>
+            <div className="flex flex-col">
+              <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">訪問スケジュール</h1>
+              {isGuest && (
+                <span className="text-xs font-bold text-orange-600 bg-orange-50 px-2 py-0.5 rounded-full mt-1 inline-block w-fit">
+                  ゲストモード実行中（保存されません）
+                </span>
+              )}
+            </div>
             <button onClick={handleToday} className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium hover:bg-gray-50 transition-colors">
               今日
             </button>
@@ -158,7 +171,7 @@ function App() {
             <button 
               onClick={() => logout()} 
               className="p-2 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-full transition-all"
-              title="ログアウト"
+              title={isGuest ? "終了" : "ログアウト"}
             >
               <LogOutIcon className="w-5 h-5" />
             </button>

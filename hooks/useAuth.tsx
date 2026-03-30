@@ -5,8 +5,10 @@ import { doc, getDoc, setDoc } from 'firebase/firestore';
 
 interface AuthContextType {
   user: User | null;
+  isGuest: boolean;
   loading: boolean;
   login: () => Promise<void>;
+  loginAsGuest: () => void;
   logout: () => Promise<void>;
   initError: string | null;
 }
@@ -19,9 +21,16 @@ interface AuthProviderProps {
 
 export const AuthProvider = ({ children }: AuthProviderProps) => {
   const [user, setUser] = useState<User | null>(null);
+  const [isGuest, setIsGuest] = useState(false);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    // Check if guest mode was active
+    const savedGuestMode = localStorage.getItem('guestMode') === 'true';
+    if (savedGuestMode) {
+      setIsGuest(true);
+    }
+
     if (initError || !auth) {
       setLoading(false);
       return;
@@ -43,6 +52,8 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         } catch (error) {
           console.error("Error checking/creating user profile:", error);
         }
+        setIsGuest(false);
+        localStorage.removeItem('guestMode');
       }
       setUser(firebaseUser);
       setLoading(false);
@@ -58,13 +69,20 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     }
   };
 
+  const loginAsGuest = () => {
+    setIsGuest(true);
+    localStorage.setItem('guestMode', 'true');
+  };
+
   const logout = async () => {
     if (auth) {
       await auth.signOut();
     }
+    setIsGuest(false);
+    localStorage.removeItem('guestMode');
   };
 
-  const value = { user, loading, login, logout, initError };
+  const value = { user, isGuest, loading, login, loginAsGuest, logout, initError };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
